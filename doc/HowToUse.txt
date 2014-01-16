@@ -1,0 +1,32 @@
+after you installing node.js, you can start to use malache simple http server.
+
+
+first, you need to set up conf.js, it is a configuration file for server.
+open that file, as you can see, it is a JSON. follow tips, you can easilly set up the server.
+
+and then, just run "startup.js" with node.
+
+
+
+
+
+PLUGIN:
+  after you made a plugin for this server, you will need to use "plugin" command to install the plugin. 
+  use:
+     node plugin list--------------to list installed plugins.
+     node plugin remove ...--------to remove a plugin.
+     node plugin install ..--------to install a new plugin.(you have to put the .js file into /plugins first).
+  after you installed a plugin, it will be ran after you restart server.
+
+
+
+ACTIVE:
+  for building a active site, you need to use active feature.
+  first, you need to create a folder in "/active" folder for saving .js file.
+  and then every .js file will be bound to a protected file (with save filename) in root of a site.
+  for example:
+     you have set the protected file type as .htm, in root folder, there is a file named index.htm.
+     now, you need to create a file named index.js in the active folder for this site.
+
+
+
