@@ -27,28 +27,28 @@ var cp=require("child_process");
 
 
 
-process.title="Malache HTTP Server";					//set title name
+process.title="Malache HTTP Server";					//set title text
 var sys=new Object;
 var ex;
-    (function()
-    {
-    	for (var i=0;i<conf.activeModules.length;i++)
-    	{
-    		sys[conf.activeModules[i]]=require(conf.activeModules[i]);
-    	}
-    	sys.conf=conf;
-    	ex=new Ex(sys);
-    	Serv(ex);
-    })();
+(function()                                 //initialize the environment of active pages.
+{
+	for (var i=0;i<conf.activeModules.length;i++)
+	{
+		sys[conf.activeModules[i]]=require(conf.activeModules[i]);
+	}
+	sys.conf=conf;
+	ex=new Ex(sys);
+	Serv(ex);
+})();
 var server=http.createServer(function(req,res)		//http requesting handler
 {
     var folder=new String;
-    console.log("\r\n~~~~~~~~~~~~~~~~~~~~~REQUEST~~~~~~~~~~~~~~~~~~~~~~");
+    console.log("\r\n~~~~~~~~~~~~~~~~~~~~~REQUEST~~~~~~~~~~~~~~~~~~~~~~");              //show request information on every requesting.
     console.log("request time: "+Date());
 	console.log("connected from client: "+req.socket.remoteAddress+":"+req.socket.remotePort+"\r\nrequested file: "+req.url+"\r\nfrom: "+req.headers.host);
 	console.log("~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\r\n");
 	res.setHeader("Server","Malache HTTP server, made by malpower(malpower@ymail.com)");
-	if (typeof(conf.domains[req.headers.host])!="undefined")
+	if (typeof(conf.domains[req.headers.host])!="undefined")                   //redirect into domain directories.
 	{
 	    folder=conf.domains[req.headers.host].folder;
 	    if (folder==undefined)
@@ -62,7 +62,7 @@ var server=http.createServer(function(req,res)		//http requesting handler
 	}
 	if (req.url.substring(req.url.length-1,req.url.length)=="/")					//set default page
 	{
-	    if (conf.domains[req.headers.host]!=undefined && typeof(conf.domains[req.headers.host].defaultPage)=="string")
+	    if (conf.domains[req.headers.host]!=undefined && typeof(conf.domains[req.headers.host].defaultPage)=="string")             //set default page of in this domain.
 	    {
 		    req.url+=conf.domains[req.headers.host].defaultPage;
 		}
@@ -71,16 +71,16 @@ var server=http.createServer(function(req,res)		//http requesting handler
             req.url+=conf.defaultIndex;
         }		  
 	}
-	if (req.url.substring(req.url.lastIndexOf(".")+1,req.url.length)==conf.protect)
+	if (req.url.substring(req.url.lastIndexOf(".")+1,req.url.length)==conf.protect)                        //check if the request is for a active page.requesting protected file will be changed into active page.
 	{
 		req.url=req.url.substring(0,req.url.lastIndexOf("."))+"."+conf.activeType;
 		console.log(req.url);
 	}
-	if (ex.runService(req,res))
+	if (ex.runService(req,res))                                //check and run if the requesting is for plugin.
 	{
 		return false;
 	}
-	if (Active(req,res,sys))
+	if (Active(req,res,sys))                                   //check and run if the requesting is for active page.
 	{
 		return false;
 	}
@@ -92,17 +92,18 @@ var server=http.createServer(function(req,res)		//http requesting handler
     {
         console.log("DECODE URI ERROR");
     }
-    fs.open(folder+req.url,"r",function(err,fd)                    //read file and response data.
+    var realFilePath=req.url.substring(0,(req.url.lastIndexOf("?")>1?req.url.lastIndexOf("?"):req.url.length));
+    fs.open(folder+realFilePath,"r",function(err,fd)                    //read file and response data.
     {
-        if (err)
+        if (err)                                //response 404 if the file is not existing.
         {
             res.setHeader("content-type","text/html");
             res.statusCode=404;
             res.end("<h1>Error 404<br />File not found!</h1><br /><span style='font-size: 11px'>This simple http server is made by malpower.</span>");
             return false;
         }
-        var stat=fs.fstatSync(fd);
-        if (!stat.isFile())
+        var stat=fs.fstatSync(fd);                  //read details of requesting file.
+        if (!stat.isFile())                         //response 403 if the requesting file is a folder.
         {
             res.statusCode=403;
             res.end("<h1>Error 403</h1><br />folder cannot be listed.");
@@ -116,10 +117,11 @@ var server=http.createServer(function(req,res)		//http requesting handler
             res.end();                                              //does not response data body, browser will read this file in it's cache.
             return;
         }
-        res.statusCode=200;
+        res.statusCode=200;                                         //response data normally.
         res.setHeader("cache-control","private");
         res.setHeader("last-modified",stat.mtime);
-        var efn=req.url.substring(req.url.lastIndexOf(".")+1,req.url.length);
+        var efn=req.url.substring(realFilePath.lastIndexOf(".")+1,realFilePath.length);
+        res.setHeader("content-type","unknow/*");                   //set default content-type.
         for (var i=0;i<conf.contentTypes.length;i++)
         {
             if (conf.contentTypes[i].type==efn)
@@ -128,20 +130,21 @@ var server=http.createServer(function(req,res)		//http requesting handler
                 break;
             }
         }
-        var rs=fs.createReadStream(folder+req.url);
+        var rs=fs.createReadStream(folder+realFilePath);                 //read file.
         rs.on("data",function(data)
         {
-            res.write(data);
+            res.write(data);                                    //response data.
         });
-        rs.on("end",function()
+        rs.on("end",function()                                  //finish responsing.
         {
             res.end();
             fs.close(fd);
             delete rs;
         });
-        rs.on("error",function(e)
+        rs.on("error",function(e)                               //response 500 if get any error on reading file.
         {
-            res.end();
+            res.statusCode=500;
+            res.end("500 ERROR");
             fs.close(fd);
             console.log(e.message);
             delete rs;
@@ -168,33 +171,33 @@ var ips=new Array;						//an array for keeping local ip addresses.
 })();
 try
 {
-	server.listen(conf.port);
+	server.listen(conf.port);                      //restart listenning port.
 }
-catch(e)
+catch(e)                                            //error on listenning.
 {
 	console.log(e);
 	console.log("Maybe you can change http port in conf.js.This error captured because that port "+conf.port+" is in use.");
 	process.exit(1);
 }
-console.log("============Malache Http Server by malpower==========");
-console.log("Version: D20131212062002s");
+console.log("============Malache Http Server by malpower==========");               //show malache informations.
+console.log("Version: D201403191533s");
 console.log("HTTP server is now running on port: "+conf.port);
 console.log("Default WEB base folder: "+conf.folder);
 console.log("Domain list: ");
-for (var x in conf.domains)
+for (var x in conf.domains)                                                 //list domains which has set in conf.js
 {
     console.log("           "+x+" : "+conf.domains[x].folder);
 }
 console.log("Address list: ");
 for (var i=0;i<ips.length;i++)
 {
-	console.log("              "+ips[i]);
+	console.log("           "+ips[i]);
 }
-console.log("-----------------------------------------------------");
+console.log("-----------------------------------------------------\r\n");
 
-process.on("uncaughtException",function(e)
+process.on("uncaughtException",function(e)                                                      //prevent exiting program.
 {
-    console.log("FINAL ERROR==================================");
+    console.log("FINAL ERROR========MAIN");
     console.log(e.message);
 });
 

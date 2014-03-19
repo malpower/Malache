@@ -29,6 +29,7 @@ var maxSent=false;
 
 var server=http.createServer(function(req,res)      //http requesting handler
 {
+    res.setHeader("connection","close");
     if (server._connections>3)
     {
         if (!maxSent)
@@ -146,8 +147,13 @@ var tcpHandle;
 
 process.on("message",function(m,h)
 {
-    h=new net.Socket({handle: h});
-    server.emit("connection",h);
+    console.log("Message: "+process.pid);
+    var socket=new net.Socket({handle: h,allowHalfOpen: server.allowHalfOpen});
+    socket.readable=socket.writable=true;
+    socket.server=server;
+    socket.emit("connect");
+    server.emit("connection",socket);
+    socket.resume();
 });
 
 

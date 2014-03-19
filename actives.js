@@ -1,6 +1,7 @@
 var conf=require("./conf");
 var fs=require("fs");
 var mysql=require("mysql");
+var dir=require("path");
 
 
 var srs=new String;
@@ -15,16 +16,20 @@ function SessionPool()
     var pool=new Object;
     function Create(v)
     {
-        if (v!=null)
+        if (!!v && typeof(v)!="string")
+        {
+            return false;
+        }
+        var x=new String;
+        if (typeof(v)=="string" && (pool[v]==undefined || pool[v]==null))
         {
             pool[v]={value: {}};
             pool[v].timer=setTimeout(function()
             {
-                delete pool[x];
+                delete pool[v];
             },conf.sessionTimeout);
             return;
         }
-        var x=new String;
         for (var i=0;i<12;i++)
         {
             x+=String(parseInt(Math.random()*Math.random()*17*13*11*23*27)).substring(0,1);
@@ -72,7 +77,7 @@ function OrganizationFile(req,fn)
             var ns=new Date;
             var ick=blk;
             var blk_b=blk.toString("binary");
-            var blk_u=blk.toString(conf.cutType);                           //this statement occupied much time when conf.cutType equals "utf-8"
+            var blk_u=blk.toString(conf.cutType);                           //this statement occupies much time when conf.cutType equals "utf-8"
             var header=blk_u.substring(0,blk_u.indexOf("\r\n\r\n"));
             var sp=blk_b.indexOf("\r\n\r\n")+4;
             var chunk=ick.slice(sp,ick.length);
@@ -87,6 +92,15 @@ function OrganizationFile(req,fn)
                 return true;
             }
             name=header.split("name=\"")[1].split("\"")[0];
+            if (req.parameters[name]!=undefined)
+            {
+                req.parameters[name]=new Array(req.parameters[name]);
+            }
+            if (req.parameters[name] instanceof Array)
+            {
+                req.parameters[name].push(chunk);
+                return false;
+            }
             req.parameters[name]=chunk;
             return false;
         }
@@ -143,7 +157,7 @@ function Addon(tag)
     {
         if (file.search(/\.\./g)!=-1)
         {
-            return "文件名错误，访问越权!";
+            return "invalid filename";
         }
         try
         {
@@ -151,7 +165,7 @@ function Addon(tag)
         }
         catch (e)
         {
-            return "读取文件出错: "+e.message;
+            return "error on reading file."+e.message;
         }
         return buf;
     };
@@ -212,7 +226,11 @@ function Render(html,values)
 	return html;
 }
 
-function Active(req,res,sys)
+
+
+
+//first, i'm so sorry for this pyramid of doom, please don't kill me!
+function Active(req,res,sys)            
 {
     var tmpHeaderCookies=new Array;
     res.setHeader("cache-control","private");
@@ -252,7 +270,7 @@ function Active(req,res,sys)
                     catch (e)
                     {
                         console.log(e);
-                        res.status=500;
+                        res.statusCode=500;
                         res.end("!ERROR 500<br />"+e.message);
                     }
                 });
@@ -323,7 +341,25 @@ function Active(req,res,sys)
         {
             sessionPool.create(x);
         }
-        Page.call(globalEnv,req,Returner,ErrorBlock,DB,GetCookie(),SetCookie,sessionPool.get(x),application);
+        var require=function(path)
+        {
+            var filename=dir.basename(path);
+            if (typeof(filename)!="string")
+            {
+                console.log("p1");
+                return null;
+            }
+            try
+            {
+                var ap=fs.readFileSync("./actives/"+conf.domains[req.headers.host].active+"/"+filename);
+            }
+            catch (e)
+            {
+                return null;
+            }    
+            return (new Function(ap))();
+        };
+        Page.call(globalEnv,req,Returner,ErrorBlock,DB,GetCookie(),SetCookie,sessionPool.get(x),application,require);
     }
 	var activeFolder;
 	var siteFolder;
@@ -348,7 +384,7 @@ function Active(req,res,sys)
 			if (err)
 			{
 				res.setHeader("content-type","text/html;charset=utf-8");
-				res.status=500;
+				res.statusCode=500;
 				res.end("500 ERROR<br />Cannot find this active in active folder.");
 				return false;
 			}
@@ -360,7 +396,7 @@ function Active(req,res,sys)
 					if (err)
 					{
 						res.setHeader("content-type","text/html;charset=utf-8");
-						res.status=500;
+						res.statusCode=500;
 						res.end("ERROR 500<br />Cannot open bound html page.");
 						return false;
 					}
@@ -384,6 +420,21 @@ function Active(req,res,sys)
     						    ps=ps.split("&");
     						    for (var i=0;i<ps.length;i++)
     						    {
+    						        if (ps[i]=="")
+    						        {
+    						            continue;
+    						        }
+    						        if (req.parameters[ps[i].split("=")[0]]!=undefined)
+    						        {
+    						            req.parameters[ps[i].split("=")[0]]=new Array(req.parameters[ps[i].split("=")[0]]);
+    						        }
+    						        if (req.parameters[ps[i].split("=")[0]] instanceof Array)
+    						        {
+    						            req.parameters[ps[i].split("=")[0]].push(ps[i].split("=")[1]);
+    						            req.parameters[ps[i].split("=")[0]][req.parameters[ps[i].split("=")[0]].length-1]=req.parameters[ps[i].split("=")[0]][req.parameters[ps[i].split("=")[0]].length-1].replace(/\+/g," ");
+                                        req.parameters[ps[i].split("=")[0]][req.parameters[ps[i].split("=")[0]].length-1]=decodeURIComponent(req.parameters[ps[i].split("=")[0]][req.parameters[ps[i].split("=")[0]].length-1]);
+                                        continue;
+                                    }
     						        req.parameters[ps[i].split("=")[0]]=ps[i].split("=")[1];
     						        req.parameters[ps[i].split("=")[0]]=req.parameters[ps[i].split("=")[0]].replace(/\+/g," ");
     						        req.parameters[ps[i].split("=")[0]]=decodeURIComponent(req.parameters[ps[i].split("=")[0]]);
@@ -400,25 +451,27 @@ function Active(req,res,sys)
 						    }
 							function ErrorBlock(e)
 							{
-                                res.status=500;
+                                res.statusCode=500;
                                 res.end("!ERROR 500<br />"+e.message);
                             }
-                            var Page=(new Function("function Page(req,Rnt,_Err,DBC,GetCookie,SetCookie,session,application){try{"+String(buf)+"\r\n}catch(e){_Err(e);}}return Page;"))();
+                            var Page=(new Function("function Page(req,Rnt,_Err,DBC,GetCookie,SetCookie,session,application,require){try{"+String(buf)+"\r\n}catch(e){_Err(e);}}return Page;"))();
 							try
 							{
 							   DoProcess(Page,req,Returner,ErrorBlock);
 						    }
 						    catch (e)
 						    {
-						        res.status=500;
+						        res.statusCode=500;
 						        res.end("!ERROR 500<br />"+e.message);
+						        return false;
 						    }
 							
 						}
 						catch (e)
 						{
-							res.status=500;
+							res.statusCode=500;
 							res.end("!ERROR 500<br />"+e.message);
+							return false;
 						}
 					}
 					else
@@ -429,6 +482,7 @@ function Active(req,res,sys)
 					    if (Number(req.headers["content-length"])!=Number(req.headers["content-length"]) || Number(req.headers["content-length"])>conf.postSize)
 					    {
 					        console.log("FILE SIZE OUT OF LIMIT.");
+					        res.statusCode=500;
 					        res.end(":(<br />FLIE SIZE OUT OF LIMIT.");
                             return false;
                         }
@@ -449,7 +503,7 @@ function Active(req,res,sys)
 						    }
 					        if (tSize.length>conf.postSize)
 					        {
-					            console.log("FILE SIZE OUT LIMIT.");
+					            console.log("WARNING(ATTACKING): FILE SIZE OUT LIMIT.");
 					            vailable=false;
 					            res.end(":(<br />FLIE SIZE OUT OF LIMIT.");
 					            req.socket.destroy();
@@ -461,6 +515,7 @@ function Active(req,res,sys)
 						{
 						    if (!vailable)
 						    {
+						        res.statusCode=500;
 						        res.end(":(<br />FLIE SIZE OUT OF LIMIT.");
 						        return false;
 						    }
@@ -476,7 +531,7 @@ function Active(req,res,sys)
     						            clearInterval(endTimer);
     						            _END();
     						        }
-    						    },1);
+    						    },0);
 						    }
 						    else
 						    {
@@ -496,7 +551,24 @@ function Active(req,res,sys)
                                         ps=ps.split("&");
                                         for (var i=0;i<ps.length;i++)
                                         {
+                                            if (ps[i]=="")
+                                            {
+                                                continue;
+                                            }
+                                            if (req.parameters[ps[i].split("=")[0]]!=undefined)
+                                            {
+                                                req.parameters[ps[i].split("=")[0]]=new Array(req.parameters[ps[i].split("=")[0]]);
+                                            }
+                                            if (req.parameters[ps[i].split("=")[0]] instanceof Array)
+                                            {
+                                                req.parameters[ps[i].split("=")[0]].push(ps[i].split("=")[1]);
+                                                req.parameters[ps[i].split("=")[0]][req.parameters[ps[i].split("=")[0]].length-1]=req.parameters[ps[i].split("=")[0]][req.parameters[ps[i].split("=")[0]].length-1].replace(/\+/g," ");
+                                                req.parameters[ps[i].split("=")[0]][req.parameters[ps[i].split("=")[0]].length-1]=decodeURIComponent(req.parameters[ps[i].split("=")[0]][req.parameters[ps[i].split("=")[0]].length-1]);
+                                                continue;
+                                            }
                                             req.parameters[ps[i].split("=")[0]]=ps[i].split("=")[1];
+                                            req.parameters[ps[i].split("=")[0]]=req.parameters[ps[i].split("=")[0]].replace(/\+/g," ");
+                                            req.parameters[ps[i].split("=")[0]]=decodeURIComponent(req.parameters[ps[i].split("=")[0]]);
                                         }
                                     }
     						        OrganizationFile(req,DoPOST);
@@ -512,6 +584,17 @@ function Active(req,res,sys)
         							{
         							    try
         							    {
+        							        if (req.parameters[req.data[i].split("=")[0]]!=undefined)
+        							        {
+        							            req.parameters[req.data[i].split("=")[0]]=new Array(req.parameters[req.data[i].split("=")[0]]);
+        							        }
+        							        if (req.parameters[req.data[i].split("=")[0]] instanceof Array)
+        							        {
+        							            req.parameters[req.data[i].split("=")[0]].push(req.data[i].split("=")[1]);
+        							            req.parameters[req.data[i].split("=")[0]][req.parameters[req.data[i].split("=")[0]].length-1]=req.parameters[req.data[i].split("=")[0]][req.parameters[req.data[i].split("=")[0]].length-1].replace(/\+/g," ");
+        							            req.parameters[req.data[i].split("=")[0]][req.parameters[req.data[i].split("=")[0]].length-1]=decodeURIComponent(req.parameters[req.data[i].split("=")[0]][req.parameters[req.data[i].split("=")[0]]]);
+        							            continue;
+        							        }
             								req.parameters[req.data[i].split("=")[0]]=req.data[i].split("=")[1];
             								req.parameters[req.data[i].split("=")[0]]=req.parameters[req.data[i].split("=")[0]].replace(/\+/g," ");
                                             req.parameters[req.data[i].split("=")[0]]=decodeURIComponent(req.parameters[req.data[i].split("=")[0]]);
@@ -527,16 +610,24 @@ function Active(req,res,sys)
                                         ps=ps.split("&");
                                         for (var i=0;i<ps.length;i++)
                                         {
-                                            try
+                                            if (ps[i]=="")
                                             {
-                                                req.parameters[ps[i].split("=")[0]]=ps[i].split("=")[1];
-                                                req.parameters[ps[i].split("=")[0]]=req.parameters[ps[i].split("=")[0]].replace(/\+/g," ");
-                                                req.parameters[ps[i].split("=")[0]]=decodeURIComponent(req.parameters[ps[i].split("=")[0]]);
+                                                continue;
                                             }
-                                            catch (e)
+                                            if (req.parameters[ps[i].split("=")[0]]!=undefined)
                                             {
-                                                console.log(e.message);
+                                                req.parameters[ps[i].split("=")[0]]=new Array(req.parameters[ps[i].split("=")[0]]);
                                             }
+                                            if (req.parameters[ps[i].split("=")[0]] instanceof Array)
+                                            {
+                                                req.parameters[ps[i].split("=")[0]].push(ps[i].split("=")[1]);
+                                                req.parameters[ps[i].split("=")[0]][req.parameters[ps[i].split("=")[0]].length-1]=req.parameters[ps[i].split("=")[0]][req.parameters[ps[i].split("=")[0]].length-1].replace(/\+/g," ");
+                                                req.parameters[ps[i].split("=")[0]][req.parameters[ps[i].split("=")[0]].length-1]=decodeURIComponent(req.parameters[ps[i].split("=")[0]][req.parameters[ps[i].split("=")[0]].length-1]);
+                                                continue;
+                                            }
+                                            req.parameters[ps[i].split("=")[0]]=ps[i].split("=")[1];
+                                            req.parameters[ps[i].split("=")[0]]=req.parameters[ps[i].split("=")[0]].replace(/\+/g," ");
+                                            req.parameters[ps[i].split("=")[0]]=decodeURIComponent(req.parameters[ps[i].split("=")[0]]);
                                         }
                                     }
                                     DoPOST();
@@ -556,24 +647,27 @@ function Active(req,res,sys)
                                         }
                                         function ErrorBlock(e)
                                         {
-                                            res.status=500;
+                                            res.statusCode=500;
                                             res.end("!ERROR 500<br />"+e.message);
+                                            return false;
                                         }
-                                        var Page=(new Function("function Page(req,Rnt,_Err,DBC,GetCookie,SetCookie,session,application){try{"+String(buf)+"\r\n}catch(e){_Err(e);}}return Page;"))();
+                                        var Page=(new Function("function Page(req,Rnt,_Err,DBC,GetCookie,SetCookie,session,application,require){try{"+String(buf)+"\r\n}catch(e){_Err(e);}}return Page;"))();
                                         try
                                         {
                                            DoProcess(Page,req,Returner,ErrorBlock);
                                         }
                                         catch (e)
                                         {
-                                            res.status=500;
+                                            res.statusCode=500;
                                             res.end("!ERROR 500<br />"+e.message);
+                                            return false;
                                         }							    
         							}
         							catch (e)
         							{
-        								res.status=500;
+        								res.statusCode=500;
         								res.end("ERROR 500<br />"+e.message);
+        								return false;
         							}
         			             }     
 		                     }       
@@ -583,8 +677,9 @@ function Active(req,res,sys)
 			}
 			catch (e)
 			{
-				res.status=500;
+				res.statusCode=500;
 				res.end("ERROR 500<br />"+String(e.message));
+				return false;
 			}
 		});
 	}
