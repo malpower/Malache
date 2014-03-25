@@ -24,11 +24,13 @@ var Serv=require("./services");
 var Active=require("./actives");
 var util=require("util");
 var cp=require("child_process");
+var cwd=process.cwd();
 
 
 
-process.title="Malache HTTP Server";					//set title text
+
 var sys=new Object;
+sys.root=cwd;
 var ex;
 (function()                                 //initialize the environment of active pages.
 {
@@ -42,10 +44,12 @@ var ex;
 })();
 var server=http.createServer(function(req,res)		//http requesting handler
 {
+    process.chdir(cwd);
     var folder=new String;
     console.log("\r\n~~~~~~~~~~~~~~~~~~~~~REQUEST~~~~~~~~~~~~~~~~~~~~~~");              //show request information on every requesting.
     console.log("request time: "+Date());
 	console.log("connected from client: "+req.socket.remoteAddress+":"+req.socket.remotePort+"\r\nrequested file: "+req.url+"\r\nfrom: "+req.headers.host);
+	console.log("request method: "+req.method);
 	console.log("~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\r\n");
 	res.setHeader("Server","Malache HTTP server, made by malpower(malpower@ymail.com)");
 	if (typeof(conf.domains[req.headers.host])!="undefined")                   //redirect into domain directories.
@@ -60,7 +64,7 @@ var server=http.createServer(function(req,res)		//http requesting handler
 	{
 	    folder=conf.folder;
 	}
-	if (req.url.substring(req.url.length-1,req.url.length)=="/")					//set default page
+	if (req.url.substring(req.url.length-1,req.url.length)=="/")					//set default page for directories
 	{
 	    if (conf.domains[req.headers.host]!=undefined && typeof(conf.domains[req.headers.host].defaultPage)=="string")             //set default page of in this domain.
 	    {
@@ -71,9 +75,14 @@ var server=http.createServer(function(req,res)		//http requesting handler
             req.url+=conf.defaultIndex;
         }		  
 	}
-	if (req.url.substring(req.url.lastIndexOf(".")+1,req.url.length)==conf.protect)                        //check if the request is for a active page.requesting protected file will be changed into active page.
+	var uri=req.url.substring(0,req.url.indexOf("?"));
+	if (uri=="")
 	{
-		req.url=req.url.substring(0,req.url.lastIndexOf("."))+"."+conf.activeType;
+	    uri=req.url;
+	}
+	if (uri.substring(uri.lastIndexOf(".")+1,uri.length)==conf.protect)                        //check if the request is for a active page.requesting protected file will be changed into active page.
+	{
+		req.url=uri.substring(0,uri.lastIndexOf("."))+"."+conf.activeType+req.url.substring(req.url.indexOf("?"),req.url.length);
 		console.log(req.url);
 	}
 	if (ex.runService(req,res))                                //check and run if the requesting is for plugin.
@@ -99,7 +108,7 @@ var server=http.createServer(function(req,res)		//http requesting handler
         {
             res.setHeader("content-type","text/html");
             res.statusCode=404;
-            res.end("<h1>Error 404<br />File not found!</h1><br /><span style='font-size: 11px'>This simple http server is made by malpower.</span>");
+            res.end("<h1>Error 404<br />File not found!</h1><br /><span style='font-size: 11px'>Malache simple http server is made by malpower.</span>");
             return false;
         }
         var stat=fs.fstatSync(fd);                  //read details of requesting file.
@@ -179,8 +188,10 @@ catch(e)                                            //error on listenning.
 	console.log("Maybe you can change http port in conf.js.This error captured because that port "+conf.port+" is in use.");
 	process.exit(1);
 }
+var version="D201403251122s";
+process.title="Malache HTTP Server["+version+"]";                    //set title text
 console.log("============Malache Http Server by malpower==========");               //show malache informations.
-console.log("Version: D201403191533s");
+console.log("Version: "+version);
 console.log("HTTP server is now running on port: "+conf.port);
 console.log("Default WEB base folder: "+conf.folder);
 console.log("Domain list: ");

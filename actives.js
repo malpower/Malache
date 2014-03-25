@@ -113,7 +113,6 @@ function OrganizationFile(req,fn)
         {
             if (req.files[i].filename!="")
             {
-                console.log(".");
                 tf.push(req.files[i]);
             }
         }
@@ -185,7 +184,6 @@ function Render(html,values)
 		}
 		for (var i=0;i<tags.length;i++)
 		{
-			console.log(tags[i]);
 			tags[i]=tags[i].substring(4,tags[i].length);
 			tags[i]=tags[i].substring(0,tags[i].length-2);
 		}
@@ -244,6 +242,8 @@ function Active(req,res,sys)
         sys.path=conf.folder;
     }
     workPath=sys.path;
+    var root=sys.root;
+    delete sys.root;
     var dbconnections=new Array;
     function DB()
     {
@@ -301,7 +301,9 @@ function Active(req,res,sys)
                                             get: function(){return Query;},
                                             set: function(){}});
     }
-	if (req.url.lastIndexOf(".")==-1 || req.url.substring(req.url.lastIndexOf(".")+1,req.url.length).split("?")[0]!=conf.activeType)
+    var uri=req.url.substring(0,req.url.indexOf("?"));
+    if (uri==""){uri=req.url;}
+	if (uri.lastIndexOf(".")==-1 || uri.substring(uri.lastIndexOf(".")+1,uri.length)!=conf.activeType)
 	{
 		return false;
 	}
@@ -346,7 +348,6 @@ function Active(req,res,sys)
             var filename=dir.basename(path);
             if (typeof(filename)!="string")
             {
-                console.log("p1");
                 return null;
             }
             try
@@ -442,6 +443,22 @@ function Active(req,res,sys)
     						}
 						    function Returner(obj)
 						    {
+                                if (obj.__malS)
+                                {
+                                    if (typeof(obj.__malS.contentType)=="string")
+                                    {
+                                        res.setHeader("content-type",obj.__malS.header);
+                                    }
+                                    if (obj.__malS.blockData==true)
+                                    {
+                                        res.end(obj.__malS.buffer || "");
+                                        for (var i=0;i<dbconnections.length;i++)
+                                        {
+                                            dbconnections[i].end();
+                                        }
+                                        return;
+                                    }
+                                }
 						        res.setHeader("set-cookie",tmpHeaderCookies);
 						        res.end(Render(String(html),obj));
 						        for (var i=0;i<dbconnections.length;i++)
@@ -638,6 +655,22 @@ function Active(req,res,sys)
         							{
                                         function Returner(obj)
                                         {
+                                            if (obj.__malS)
+                                            {
+                                                if (typeof(obj.__malS.contentType)=="string")
+                                                {
+                                                    res.setHeader("content-type",obj.__malS.header);
+                                                }
+                                                if (obj.__malS.blockData==true)
+                                                {
+                                                    res.end(obj.__malS.buffer || "");
+                                                    for (var i=0;i<dbconnections.length;i++)
+                                                    {
+                                                        dbconnections[i].end();
+                                                    }
+                                                    return;
+                                                }
+                                            }
                                             res.setHeader("set-cookie",tmpHeaderCookies);
                                             res.end(Render(String(html),obj));
                                             for (var i=0;i<dbconnections.length;i++)
