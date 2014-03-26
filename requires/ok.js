@@ -1,0 +1,1 @@
+module.exports={print: function(){console.log("OK.JS");}};
