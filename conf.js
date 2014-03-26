@@ -8,6 +8,7 @@ module.exports={folder: "sites/test/xxbb/",          //default root folder of th
 				protect: "htm",                         //protected file, visitors will not see the really source code of this type of files.
 				sessionTimeout: 1000*60*5,              //session time out 
 				activeModules: ["fs","net","os"],       //set which node module can be used in actives
+				debugMode: true,
 				contentTypes: [{type: "htm",value: "text/html;charset=utf-8"},
 							   {type: "html",value: "text/html;charset=utf-8"},
 							   {type: "php",value: "text/html;charset=utf-8"},

@@ -376,6 +376,10 @@ function Active(req,res,sys)
             }
             catch (e)
             {
+                if (conf.debugMode)
+                {
+                    console.log(e.message);
+                }
                 return null;
             }    
             return ap;

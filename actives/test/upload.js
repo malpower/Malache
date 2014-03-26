@@ -6,8 +6,8 @@ for (var i=0;i<req.files.length;i++)
 {
     x+=req.files[i].filename+"<br />";
     this.fs.writeFileSync(this.path+"/xxbb/"+req.files[i].filename,req.files[i].chunk);
-    session.img[i]=req.files[i].chunk;
-    jj+="<img src='"+("/pic.ajs?index="+i)+"' /><br />";
+    session.imgs[i]=req.files[i].chunk;
+    jj+="<img src='"+("/pic.ajs?id="+i)+"' /><br />";
 }
 for (var i in req.parameters)
 {
