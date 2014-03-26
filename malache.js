@@ -80,10 +80,12 @@ var server=http.createServer(function(req,res)		//http requesting handler
 	{
 	    uri=req.url;
 	}
-	if (uri.substring(uri.lastIndexOf(".")+1,uri.length)==conf.protect)                        //check if the request is for a active page.requesting protected file will be changed into active page.
+	if (uri.substring(uri.lastIndexOf(".")+1)==conf.protect)                        //check if the request is for a active page.requesting protected file will be changed into active page.
 	{
-		req.url=uri.substring(0,uri.lastIndexOf("."))+"."+conf.activeType+req.url.substring(req.url.indexOf("?"),req.url.length);
-		console.log(req.url);
+        res.setHeader("content-type","text/html");
+        res.statusCode=404;
+        res.end("<h1>Error 404<br />File not found!</h1><br /><span style='font-size: 11px'>Malache simple http server is made by malpower.</span>");
+        return false;
 	}
 	if (ex.runService(req,res))                                //check and run if the requesting is for plugin.
 	{
@@ -188,7 +190,7 @@ catch(e)                                            //error on listenning.
 	console.log("Maybe you can change http port in conf.js.This error captured because that port "+conf.port+" is in use.");
 	process.exit(1);
 }
-var version="D201403251122s";
+var version="D201403261438s";
 process.title="Malache HTTP Server["+version+"]";                    //set title text
 console.log("============Malache Http Server by malpower==========");               //show malache informations.
 console.log("Version: "+version);

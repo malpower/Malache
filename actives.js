@@ -4,6 +4,25 @@ var mysql=require("mysql");
 var dir=require("path");
 
 
+
+
+function ReturnError500(e,res)
+{
+    res.setHeader("contentType","text/html;charset=utf-8");
+    res.statusCode=500;
+    res.write("ERROR 500<br />server internal error<br /><br />");
+    if (conf.debugMode==true)
+    {
+        console.log(e.stack);
+        var stack=e.stack.replace(/\n/g,"<br />");
+        res.write(stack);
+    }
+    res.end();
+}
+        
+        
+
+
 var srs=new String;
 for (var i=0;i<12;i++)
 {
@@ -44,6 +63,7 @@ function SessionPool()
         pool[x]={value: {}};
         pool[x].timer=setTimeout(function()
         {
+            delete pool[x].value;
             delete pool[x];
         },conf.sessionTimeout);
         return x;
@@ -57,6 +77,7 @@ function SessionPool()
         clearTimeout(pool[sid].timer);
         pool[sid].timer=setTimeout(function()
         {
+            delete pool[sid].value;
             delete pool[sid];
         },conf.sessionTimeout);
         return pool[sid].value;
@@ -77,7 +98,7 @@ function OrganizationFile(req,fn)
             var ns=new Date;
             var ick=blk;
             var blk_b=blk.toString("binary");
-            var blk_u=blk.toString(conf.cutType);                           //this statement occupies much time when conf.cutType equals "utf-8"
+            var blk_u=blk.toString(conf.cutType);                           //this statement occupies much time when conf.cutType equals "utf8"
             var header=blk_u.substring(0,blk_u.indexOf("\r\n\r\n"));
             var sp=blk_b.indexOf("\r\n\r\n")+4;
             var chunk=ick.slice(sp,ick.length);
@@ -270,8 +291,7 @@ function Active(req,res,sys)
                     catch (e)
                     {
                         console.log(e);
-                        res.statusCode=500;
-                        res.end("!ERROR 500<br />"+e.message);
+                        ReturnError500(e,res);
                     }
                 });
             }
@@ -343,7 +363,7 @@ function Active(req,res,sys)
         {
             sessionPool.create(x);
         }
-        var require=function(path)
+        var _Require=function(path)
         {
             var filename=dir.basename(path);
             if (typeof(filename)!="string")
@@ -352,15 +372,15 @@ function Active(req,res,sys)
             }
             try
             {
-                var ap=fs.readFileSync("./actives/"+conf.domains[req.headers.host].active+"/"+filename);
+                var ap=require("./requires/"+conf.domains[req.headers.host].active+"/"+filename);
             }
             catch (e)
             {
                 return null;
             }    
-            return (new Function(ap))();
+            return ap;
         };
-        Page.call(globalEnv,req,Returner,ErrorBlock,DB,GetCookie(),SetCookie,sessionPool.get(x),application,require);
+        Page.call(globalEnv,req,Returner,ErrorBlock,DB,GetCookie(),SetCookie,sessionPool.get(x),application,_Require,res);
     }
 	var activeFolder;
 	var siteFolder;
@@ -386,7 +406,7 @@ function Active(req,res,sys)
 			{
 				res.setHeader("content-type","text/html;charset=utf-8");
 				res.statusCode=500;
-				res.end("500 ERROR<br />Cannot find this active in active folder.");
+				res.end("500 ERROR<br />Cannot find this active in active folder.<br />"+active);
 				return false;
 			}
 			res.setHeader("content-type","text/html;charset=utf-8");
@@ -394,13 +414,6 @@ function Active(req,res,sys)
 			{
 				fs.readFile(siteFolder+active+"."+conf.protect,function(err,html)
 				{
-					if (err)
-					{
-						res.setHeader("content-type","text/html;charset=utf-8");
-						res.statusCode=500;
-						res.end("ERROR 500<br />Cannot open bound html page.");
-						return false;
-					}
 					try
 					{
 					   req.url=decodeURIComponent(req.url);
@@ -458,6 +471,20 @@ function Active(req,res,sys)
                                         }
                                         return;
                                     }
+                                    if (typeof(obj.__malS.response)=="string")
+                                    {
+                                        
+                                        res.end(obj.__malS.response);
+                                        return false;
+                                    }
+                                    
+                                }
+                                if (err)
+                                {
+                                    res.setHeader("content-type","text/html;charset=utf-8");
+                                    res.statusCode=500;
+                                    res.end("ERROR 500<br />Cannot open bound html page.");
+                                    return false;
                                 }
 						        res.setHeader("set-cookie",tmpHeaderCookies);
 						        res.end(Render(String(html),obj));
@@ -468,26 +495,23 @@ function Active(req,res,sys)
 						    }
 							function ErrorBlock(e)
 							{
-                                res.statusCode=500;
-                                res.end("!ERROR 500<br />"+e.message);
+                                ReturnError500(e,res);
                             }
-                            var Page=(new Function("function Page(req,Rnt,_Err,DBC,GetCookie,SetCookie,session,application,require){try{"+String(buf)+"\r\n}catch(e){_Err(e);}}return Page;"))();
+                            var Page=(new Function("function Page(req,Rnt,_Err,DBC,GetCookie,SetCookie,session,application,require,res){try{"+String(buf)+"\r\n}catch(e){_Err(e);}}return Page;"))();
 							try
 							{
 							   DoProcess(Page,req,Returner,ErrorBlock);
 						    }
 						    catch (e)
 						    {
-						        res.statusCode=500;
-						        res.end("!ERROR 500<br />"+e.message);
+						        ReturnError500(e,res);
 						        return false;
 						    }
 							
 						}
 						catch (e)
 						{
-							res.statusCode=500;
-							res.end("!ERROR 500<br />"+e.message);
+							ReturnError500(e,res);
 							return false;
 						}
 					}
@@ -670,6 +694,19 @@ function Active(req,res,sys)
                                                     }
                                                     return;
                                                 }
+                                                if (typeof(obj.__malS.response)=="string")
+                                                {
+                                                    res.end(obj.__malS.response);
+                                                    return false;
+                                                }
+                                                
+                                            }
+                                            if (err)
+                                            {
+                                                res.setHeader("content-type","text/html;charset=utf-8");
+                                                res.statusCode=500;
+                                                res.end("ERROR 500<br />Cannot open bound html page.");
+                                                return false;
                                             }
                                             res.setHeader("set-cookie",tmpHeaderCookies);
                                             res.end(Render(String(html),obj));
@@ -680,26 +717,23 @@ function Active(req,res,sys)
                                         }
                                         function ErrorBlock(e)
                                         {
-                                            res.statusCode=500;
-                                            res.end("!ERROR 500<br />"+e.message);
+                                            ReturnError500(e,res);
                                             return false;
                                         }
-                                        var Page=(new Function("function Page(req,Rnt,_Err,DBC,GetCookie,SetCookie,session,application,require){try{"+String(buf)+"\r\n}catch(e){_Err(e);}}return Page;"))();
+                                        var Page=(new Function("function Page(req,Rnt,_Err,DBC,GetCookie,SetCookie,session,application,require,res){try{"+String(buf)+"\r\n}catch(e){_Err(e);}}return Page;"))();
                                         try
                                         {
                                            DoProcess(Page,req,Returner,ErrorBlock);
                                         }
                                         catch (e)
                                         {
-                                            res.statusCode=500;
-                                            res.end("!ERROR 500<br />"+e.message);
+                                            ReturnError500(e,res);
                                             return false;
                                         }							    
         							}
         							catch (e)
         							{
-        								res.statusCode=500;
-        								res.end("ERROR 500<br />"+e.message);
+        								ReturnError500(e,res);
         								return false;
         							}
         			             }     
@@ -710,8 +744,7 @@ function Active(req,res,sys)
 			}
 			catch (e)
 			{
-				res.statusCode=500;
-				res.end("ERROR 500<br />"+String(e.message));
+			    ReturnError500(e,res);
 				return false;
 			}
 		});
