@@ -1,1 +1,1 @@
-Rnt({__malS: {response: "INTERFACE TESTING"}});
+res.end("Interface Testing");
