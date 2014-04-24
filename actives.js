@@ -28,6 +28,8 @@ for (var i=0;i<12;i++)
 {
     srs+=String(parseInt(Math.random()*Math.random()*17*13*11*23*27)).substring(0,1);
 }
+var sessionName=conf.sessionName || "malacheSESSION"+srs;
+console.log("SESSIONID NAME:"+sessionName);
 
 var application=new Object;
 function SessionPool()
@@ -191,7 +193,6 @@ function Addon(tag)
     };
 }
 
-
 function Render(html,values)
 {
 	try
@@ -350,14 +351,14 @@ function Active(req,res,sys)
     function DoProcess(Page,req,Returner,ErrorBlock)
     {
         var x;
-        if (GetCookie()("malacheSESSION"+srs)==undefined)
+        if (GetCookie()(sessionName)==undefined)
         {
             x=sessionPool.create();
-            SetCookie("malacheSESSION"+srs,x);
+            SetCookie(sessionName,x);
         }
         else
         {
-            x=GetCookie()("malacheSESSION"+srs);
+            x=GetCookie()(sessionName);
         }
         if (sessionPool.get(x)==false)
         {
@@ -464,7 +465,7 @@ function Active(req,res,sys)
                                 {
                                     if (typeof(obj.__malS.contentType)=="string")
                                     {
-                                        res.setHeader("content-type",obj.__malS.header);
+                                        res.setHeader("content-type",obj.__malS.contentType);
                                     }
                                     if (obj.__malS.blockData==true)
                                     {
@@ -687,7 +688,7 @@ function Active(req,res,sys)
                                             {
                                                 if (typeof(obj.__malS.contentType)=="string")
                                                 {
-                                                    res.setHeader("content-type",obj.__malS.header);
+                                                    res.setHeader("content-type",obj.__malS.contentType);
                                                 }
                                                 if (obj.__malS.blockData==true)
                                                 {

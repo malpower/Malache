@@ -103,6 +103,14 @@ var server=http.createServer(function(req,res)		//http requesting handler
     {
         console.log("DECODE URI ERROR");
     }
+    if (req.method=="POST")
+    {
+        res.statusCode=400;
+        res.setHeader("content-type","text/html");
+        res.end("<h1>400</h1><br /><br />wrong requesting method");
+        req.socket.destroy();
+        return false;
+    }
     var realFilePath=req.url.substring(0,(req.url.lastIndexOf("?")>1?req.url.lastIndexOf("?"):req.url.length));
     fs.open(folder+realFilePath,"r",function(err,fd)                    //read file and response data.
     {
@@ -133,6 +141,7 @@ var server=http.createServer(function(req,res)		//http requesting handler
         res.setHeader("last-modified",stat.mtime);
         var efn=req.url.substring(realFilePath.lastIndexOf(".")+1,realFilePath.length);
         res.setHeader("content-type","unknow/*");                   //set default content-type.
+        res.setHeader("content-length",stat.size);
         for (var i=0;i<conf.contentTypes.length;i++)
         {
             if (conf.contentTypes[i].type==efn)
@@ -182,7 +191,20 @@ var ips=new Array;						//an array for keeping local ip addresses.
 })();
 try
 {
-	server.listen(conf.port);                      //restart listenning port.
+    if (conf.bindingIp)
+    {
+	    server.listen(conf.port,conf.bindingIp);                      //restart listenning port.
+    }
+    else
+    {
+        server.listen(conf.port);
+    }
+    server.on("error",function(e)
+    {
+        console.log(e);
+        console.log("Maybe you can change http port in conf.js.This error captured because that port "+conf.port+" is in use.");
+        process.exit(1);
+    });
 }
 catch(e)                                            //error on listenning.
 {
@@ -211,7 +233,7 @@ console.log("-----------------------------------------------------\r\n");
 process.on("uncaughtException",function(e)                                                      //prevent exiting program.
 {
     console.log("FINAL ERROR========MAIN");
-    console.log(e.message);
+    console.log(e.stack);
 });
 
 
