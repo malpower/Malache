@@ -252,6 +252,7 @@ function Render(html,values)
 //first, i'm so sorry for this pyramid of doom, please don't kill me!
 function Active(req,res,sys)            
 {
+    req.formType=false;
     var tmpHeaderCookies=new Array;
     res.setHeader("cache-control","private");
     res.setHeader("connection","keep-alive");
@@ -410,8 +411,8 @@ function Active(req,res,sys)
 			if (err)
 			{
 				res.setHeader("content-type","text/html;charset=utf-8");
-				res.statusCode=500;
-				res.end("500 ERROR<br />Cannot find this active in active folder.<br />"+active);
+				res.statusCode=404;
+				res.end("<h1>Error 404<br />File not found!</h1><br /><span style='font-size: 11px'>Malache simple http server is made by malpower.</span>");
 				return false;
 			}
 			res.setHeader("content-type","text/html;charset=utf-8");
@@ -535,6 +536,7 @@ function Active(req,res,sys)
 					    if (req.headers["content-type"] && req.headers["content-type"].indexOf("multipart/form-data")!=-1)
 					    {
 					        formType="formdata";
+					        req.formType=true;
 					    }
 					    var vailable=true;
 					    var _ns=new Date;
