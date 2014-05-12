@@ -212,7 +212,7 @@ catch(e)                                            //error on listenning.
 	console.log("Maybe you can change http port in conf.js.This error captured because that port "+conf.port+" is in use.");
 	process.exit(1);
 }
-var version="D201403261438s";
+var version="D201405121859s";
 process.title="Malache HTTP Server["+version+"]";                    //set title text
 console.log("============Malache Http Server by malpower==========");               //show malache informations.
 console.log("Version: "+version);
