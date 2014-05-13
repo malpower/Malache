@@ -481,6 +481,11 @@ function Active(req,res,sys)
                                     {
                                         
                                         res.end(obj.__malS.response);
+                                        for (var i=0;i<dbconnections.length;i++)
+                                        {
+                                            dbconnections[i].end();
+                                        }
+                                        return;
                                         return false;
                                     }
                                     
@@ -704,6 +709,10 @@ function Active(req,res,sys)
                                                 if (typeof(obj.__malS.response)=="string")
                                                 {
                                                     res.end(obj.__malS.response);
+                                                    for (var i=0;i<dbconnections.length;i++)
+                                                    {
+                                                        dbconnections[i].end();
+                                                    }
                                                     return false;
                                                 }
                                                 
