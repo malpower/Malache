@@ -2,6 +2,8 @@ var conf=require("./conf");
 var fs=require("fs");
 var mysql=require("mysql");
 var dir=require("path");
+var path=dir;
+var ejs=require("ejs");
 
 
 
@@ -498,7 +500,9 @@ function Active(req,res,sys)
                                     return false;
                                 }
 						        res.setHeader("set-cookie",tmpHeaderCookies);
-						        res.end(Render(String(html),obj));
+						        //res.end(Render(String(html),obj));
+						        obj.filename=__dirname+path.dirname(req.url)+siteFolder+path.basename(req.url);
+						        res.end(ejs.render(String(html),obj));
 						        for (var i=0;i<dbconnections.length;i++)
 						        {
 						            dbconnections[i].end();
@@ -725,7 +729,9 @@ function Active(req,res,sys)
                                                 return false;
                                             }
                                             res.setHeader("set-cookie",tmpHeaderCookies);
-                                            res.end(Render(String(html),obj));
+                                            //res.end(Render(String(html),obj));
+                                            obj.filename=__dirname+path.dirname(req.url)+siteFolder+path.basename(req.url);
+                                            res.end(ejs.render(String(html),obj));
                                             for (var i=0;i<dbconnections.length;i++)
                                             {
                                                 dbconnections[i].end();
