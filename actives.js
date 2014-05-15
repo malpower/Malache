@@ -418,9 +418,18 @@ function Active(req,res,sys)
 				return false;
 			}
 			res.setHeader("content-type","text/html;charset=utf-8");
+			var ename;
 			try
 			{
-				fs.readFile(siteFolder+active+"."+conf.protect,function(err,html)
+			    if (typeof(conf.domains[req.headers.host].template)=="string")
+			    {
+			        ename=conf.domains[req.headers.host].template;
+			    }
+			    else
+			    {
+			        ename=conf.protect;
+			    }
+				fs.readFile(siteFolder+active+"."+ename,function(err,html)
 				{
 					try
 					{
