@@ -55,6 +55,13 @@ any emergency qeustion, you can mail me at: malpower@ymail.com or my tencent QQ 
 
 
 
+Now, Malache has changed default template engine into EJS, so, you can code the template with EJS grammers.
+
+
+
+
+
+
 
 
 
