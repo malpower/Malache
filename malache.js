@@ -29,6 +29,15 @@ var cwd=process.cwd();
 
 
 
+if (process.argv.length==3)
+{
+    if (parseInt(process.argv[2])>0 && parseInt(process.argv[2])<65536)
+    {
+        conf.port=parseInt(process.argv[2]);
+    }
+}
+
+
 var sys=new Object;
 sys.root=cwd;
 var ex;
@@ -50,7 +59,7 @@ var server=http.createServer(function(req,res)		//http requesting handler
     console.log("request time: "+Date());
 	console.log("connected from client: "+req.socket.remoteAddress+":"+req.socket.remotePort+"\r\nrequested file: "+req.url+"\r\nfrom: "+req.headers.host);
 	console.log("request method: "+req.method);
-	console.log("~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\r\n");
+	console.log("~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\r\n");
 	res.setHeader("Server","Malache HTTP server, made by malpower(malpower@ymail.com)");
 	if (typeof(conf.domains[req.headers.host])!="undefined")                   //redirect into domain directories.
 	{
