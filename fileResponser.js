@@ -1,6 +1,7 @@
 var http=require("http");
 var conf=require("./conf");
 var fs=require("fs");
+var cid=0;
 var server=http.createServer(function(req,res)
 {
     var folder=new String;
@@ -8,6 +9,7 @@ var server=http.createServer(function(req,res)
     console.log("request time: "+Date());
     console.log("connected from client: "+req.socket.remoteAddress+":"+req.socket.remotePort+"\r\nrequested file: "+req.url+"\r\nfrom: "+req.headers.host);
     console.log("request method: "+req.method);
+    console.log("solve: fileResponser("+cid+")");
     console.log("~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\r\n");
     res.setHeader("Server","Malache HTTP server, made by malpower(malpower@ymail.com)");
     if (typeof(conf.domains[req.headers.host])!="undefined")                   //redirect into domain directories.
@@ -35,7 +37,7 @@ var server=http.createServer(function(req,res)
     }
     try
     {
-       req.url=decodeURIComponent(req.url);
+        req.url=decodeURIComponent(req.url);
     }
     catch (e)
     {
@@ -51,6 +53,7 @@ var server=http.createServer(function(req,res)
     }
     res.setHeader("Connection","close");
     var realFilePath=req.url.substring(0,(req.url.lastIndexOf("?")>1?req.url.lastIndexOf("?"):req.url.length));
+    console.log(folder+realFilePath);
     fs.open(folder+realFilePath,"r",function(err,fd)                    //read file and response data.
     {
         if (err)                                //response 404 if the file is not existing.
@@ -113,7 +116,7 @@ var server=http.createServer(function(req,res)
 
 process.on("message",function(msg)
 {
-    
+    cid=msg.id;
     server.listen(msg.port,"127.0.0.1");
 });
 

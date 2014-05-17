@@ -59,6 +59,7 @@ var server=http.createServer(function(req,res)		//http requesting handler
     console.log("request time: "+Date());
 	console.log("connected from client: "+req.socket.remoteAddress+":"+req.socket.remotePort+"\r\nrequested file: "+req.url+"\r\nfrom: "+req.headers.host);
 	console.log("request method: "+req.method);
+	console.log("solve: mainProcesser");
 	console.log("~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\r\n");
 	res.setHeader("Server","Malache HTTP server, made by malpower(malpower@ymail.com)");
 	if (typeof(conf.domains[req.headers.host])!="undefined")                   //redirect into domain directories.

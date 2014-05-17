@@ -8,12 +8,12 @@ var sids=conf.sessionName;
 var basePort=conf.clusterStartPort;
 
 
-for (var i=0;i<5;i++)
+for (var i=0;i<conf.nclusters;i++)
 {
     (function(i)
     {
         var kid=cp.fork("./fileResponser");
-        kid.send({port: i+basePort});
+        kid.send({port: i+basePort,id: i});
     })(i);
 }
 
@@ -69,8 +69,17 @@ var server=net.createServer(function(socket)
                     return;
                 }
             }
-            LinkTo(socket,(nport++)%5+basePort,chunk);
+            LinkTo(socket,(nport++)%conf.nclusters+basePort,chunk);
         }
     });
 });
 server.listen(conf.port);
+
+
+
+
+process.on("uncaughtException",function(e)                                                      //prevent exiting program.
+{
+    console.log("FINAL ERROR========MAIN");
+    console.log(e.stack);
+});

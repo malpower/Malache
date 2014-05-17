@@ -12,6 +12,7 @@ module.exports={folder: "sites/test/xxbb/",          //default root folder of th
 				sessionName: "MAL_SID",
 				bindingIp: false,
 				clusterStartPort: 5000,
+				nclusters: 10,
 				contentTypes: [{type: "htm",value: "text/html;charset=utf-8"},
 							   {type: "html",value: "text/html;charset=utf-8"},
 							   {type: "php",value: "text/html;charset=utf-8"},
