@@ -29,7 +29,7 @@ var cwd=process.cwd();
 
 
 
-if (process.argv.length==3)
+if (process.argv.length>=3)
 {
     if (parseInt(process.argv[2])>0 && parseInt(process.argv[2])<65536)
     {
