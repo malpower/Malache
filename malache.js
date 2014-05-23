@@ -2,6 +2,7 @@ var net=require("net");
 var conf=require("./conf");
 var cp=require("child_process");
 var path=require("path");
+var os=require("os");
 
 var sids=conf.sessionName;
 
@@ -55,6 +56,7 @@ var server=net.createServer(function(socket)
         {
             filename=buff;
         }
+        console.log(buff);
         if (filename[filename.length-1]=="/" || path.extname(filename)=="."+conf.activeType || path.extname(filename)=="."+conf.protect)
         {
             LinkTo(socket,basePort-1,chunk);
@@ -74,6 +76,44 @@ var server=net.createServer(function(socket)
     });
 });
 server.listen(conf.port);
+
+
+
+var ips=new Array;                      //an array for keeping local ip addresses.
+(function()                             //for getting local ip address.
+{
+    var ifaces=os.networkInterfaces();
+    for (var x in ifaces)
+    {
+        for (var y in ifaces[x])
+        {
+            if (ifaces[x][y]["family"]=="IPv4")
+            {
+                if (ifaces[x][y]["address"]!="127.0.0.1")
+                {
+                    ips.push(ifaces[x][y]["address"]);
+                }
+            }
+        }
+    }
+})();
+var version="D201405121859s";
+process.title="Malache HTTP Server["+version+"]";                    //set title text
+console.log("============Malache Http Server by malpower==========");               //show malache informations.
+console.log("Version: "+version);
+console.log("HTTP server is now running on port: "+conf.port);
+console.log("Default WEB base folder: "+conf.folder);
+console.log("Domain list: ");
+for (var x in conf.domains)                                                 //list domains which has set in conf.js
+{
+    console.log("           "+x+" : "+conf.domains[x].folder);
+}
+console.log("Address list: ");
+for (var i=0;i<ips.length;i++)
+{
+    console.log("           "+ips[i]);
+}
+console.log("-----------------------------------------------------\r\n");
 
 
 

@@ -62,6 +62,7 @@ var server=http.createServer(function(req,res)		//http requesting handler
 	console.log("solve: mainProcesser");
 	console.log("~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\r\n");
 	res.setHeader("Server","Malache HTTP server, made by malpower(malpower@ymail.com)");
+	res.setHeader("Thread","mainProcessor");
 	if (typeof(conf.domains[req.headers.host])!="undefined")                   //redirect into domain directories.
 	{
 	    folder=conf.domains[req.headers.host].folder;
@@ -181,34 +182,9 @@ var server=http.createServer(function(req,res)		//http requesting handler
         });
     });
 });
-var ips=new Array;						//an array for keeping local ip addresses.
-(function()								//for getting local ip address.
-{
-	var ifaces=os.networkInterfaces();
-	for (var x in ifaces)
-	{
-		for (var y in ifaces[x])
-		{
-			if (ifaces[x][y]["family"]=="IPv4")
-			{
-				if (ifaces[x][y]["address"]!="127.0.0.1")
-				{
-					ips.push(ifaces[x][y]["address"]);
-				}
-			}
-		}
-	}
-})();
 try
 {
-    if (conf.bindingIp)
-    {
-	    server.listen(conf.port,conf.bindingIp);                      //restart listenning port.
-    }
-    else
-    {
-        server.listen(conf.port);
-    }
+    server.listen(conf.port,"127.0.0.1");
     server.on("error",function(e)
     {
         console.log(e);
@@ -222,23 +198,6 @@ catch(e)                                            //error on listenning.
 	console.log("Maybe you can change http port in conf.js.This error captured because that port "+conf.port+" is in use.");
 	process.exit(1);
 }
-var version="D201405121859s";
-process.title="Malache HTTP Server["+version+"]";                    //set title text
-console.log("============Malache Http Server by malpower==========");               //show malache informations.
-console.log("Version: "+version);
-console.log("HTTP server is now running on port: "+conf.port);
-console.log("Default WEB base folder: "+conf.folder);
-console.log("Domain list: ");
-for (var x in conf.domains)                                                 //list domains which has set in conf.js
-{
-    console.log("           "+x+" : "+conf.domains[x].folder);
-}
-console.log("Address list: ");
-for (var i=0;i<ips.length;i++)
-{
-	console.log("           "+ips[i]);
-}
-console.log("-----------------------------------------------------\r\n");
 
 process.on("uncaughtException",function(e)                                                      //prevent exiting program.
 {

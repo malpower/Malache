@@ -14,7 +14,7 @@ for (var i in req.parameters)
     x+=i+":"+req.parameters[i]+"<br />";
 }
 
-var html=this.fs.readFileSync(this.path+"index.htm","utf-8");
+var html=this.fs.readFileSync(this.path+"index.html","utf-8");
 SetCookie("WEOIRU","23948723948723948273");
 SetCookie("malpower","cookietest");
 var y=session.ok;

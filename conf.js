@@ -1,5 +1,5 @@
 module.exports={folder: "sites/test/xxbb/",          //default root folder of this server
-                domains: {"127.0.0.1:8099": {folder: "sites/test/",active: "test",defaultPage: "index.ajs"}},     //domain settings, domain, root folder, active folder
+                domains: {"127.0.0.1:8099": {folder: "sites/test/",active: "test",defaultPage: "index.html"}},     //domain settings, domain, root folder, active folder
 				port: 8099,           //server running port
 				postSize: 1024*1024*300,            //max file uploading size
 				defaultIndex: "index.ajs",          //default index file 

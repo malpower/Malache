@@ -12,6 +12,8 @@ var server=http.createServer(function(req,res)
     console.log("solve: fileResponser("+cid+")");
     console.log("~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\r\n");
     res.setHeader("Server","Malache HTTP server, made by malpower(malpower@ymail.com)");
+    res.setHeader("Thread",String(process.pid));
+    res.setHeader("Connection","close");
     if (typeof(conf.domains[req.headers.host])!="undefined")                   //redirect into domain directories.
     {
         folder=conf.domains[req.headers.host].folder;
@@ -43,17 +45,14 @@ var server=http.createServer(function(req,res)
     {
         console.log("DECODE URI ERROR");
     }
-    if (req.method=="POST")
+    if (req.method=="POST" && req.headers["content-type"].indexOf("multipart/form-data")!=-1)
     {
         res.statusCode=400;
         res.setHeader("content-type","text/html");
         res.end("<h1>400</h1><br /><br />wrong requesting method");
-        req.socket.destroy();
         return false;
     }
-    res.setHeader("Connection","close");
     var realFilePath=req.url.substring(0,(req.url.lastIndexOf("?")>1?req.url.lastIndexOf("?"):req.url.length));
-    console.log(folder+realFilePath);
     fs.open(folder+realFilePath,"r",function(err,fd)                    //read file and response data.
     {
         if (err)                                //response 404 if the file is not existing.
@@ -77,6 +76,7 @@ var server=http.createServer(function(req,res)
             res.setHeader("cache-control","private");
             res.end();                                              //does not response data body, browser will read this file in it's cache.
             return;
+            
         }
         res.statusCode=200;                                         //response data normally.
         res.setHeader("cache-control","private");
@@ -118,6 +118,13 @@ process.on("message",function(msg)
 {
     cid=msg.id;
     server.listen(msg.port,"127.0.0.1");
+});
+
+
+process.on("uncaughtException",function(e)                                                      //prevent exiting program.
+{
+    console.log("FINAL ERROR========MAIN");
+    console.log(e.stack);
 });
 
 
