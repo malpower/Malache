@@ -28,12 +28,12 @@ function LinkTo(client,port,chunk)
     var sock=net.connect({host: "127.0.0.1",port: port},function()
     {
         sock.write(chunk);
-        client.pipe(sock);
         sock.pipe(client);
+        client.pipe(sock);
     });
-    sock.on("close",function()
+    sock.once("close",function()
     {
-    }).on("err",function()
+    }).once("err",function()
     {});
 }
         
@@ -44,9 +44,10 @@ var server=net.createServer(function(socket)
     socket.once("data",function(chunk)
     {
         var buff=chunk.toString("utf8");
+        console.log("DATA START");
         buff=buff.split("\r\n")[0];
-        buff=buff.substring(4);
-        buff=buff.substring(0,buff.indexOf(" "));
+        buff=buff.replace(/(GET|POST)\s/g,"");
+        buff=buff.replace(/\sHTTP[^\r\n]*/g,"");
         var filename;
         if (buff.indexOf("?")!=-1)
         {
@@ -56,7 +57,6 @@ var server=net.createServer(function(socket)
         {
             filename=buff;
         }
-        console.log(buff);
         if (filename[filename.length-1]=="/" || path.extname(filename)=="."+conf.activeType || path.extname(filename)=="."+conf.protect)
         {
             LinkTo(socket,basePort-1,chunk);

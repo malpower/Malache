@@ -50,6 +50,7 @@ var server=http.createServer(function(req,res)
         res.statusCode=400;
         res.setHeader("content-type","text/html");
         res.end("<h1>400</h1><br /><br />wrong requesting method");
+        req.connection.destroy();
         return false;
     }
     var realFilePath=req.url.substring(0,(req.url.lastIndexOf("?")>1?req.url.lastIndexOf("?"):req.url.length));
@@ -60,6 +61,7 @@ var server=http.createServer(function(req,res)
             res.setHeader("content-type","text/html");
             res.statusCode=404;
             res.end("<h1>Error 404<br />File not found!</h1><br /><span style='font-size: 11px'>Malache simple http server is made by malpower.</span>");
+            req.connection.destroy();
             return false;
         }
         var stat=fs.fstatSync(fd);                  //read details of requesting file.
@@ -67,6 +69,7 @@ var server=http.createServer(function(req,res)
         {
             res.statusCode=403;
             res.end("<h1>Error 403</h1><br />folder cannot be listed.");
+            req.connection.destroy();
             return false;
         }
         if (req.headers["if-modified-since"]==stat.mtime)               //about cache.
@@ -75,6 +78,7 @@ var server=http.createServer(function(req,res)
             res.setHeader("last-modified",stat.mtime);
             res.setHeader("cache-control","private");
             res.end();                                              //does not response data body, browser will read this file in it's cache.
+            req.connection.destroy();
             return;
             
         }
@@ -100,6 +104,7 @@ var server=http.createServer(function(req,res)
         rs.on("end",function()                                  //finish responsing.
         {
             res.end();
+            req.connection.destroy();
             fs.close(fd);
             delete rs;
         });
@@ -107,6 +112,7 @@ var server=http.createServer(function(req,res)
         {
             res.statusCode=500;
             res.end("500 ERROR");
+            req.connection.destroy();
             fs.close(fd);
             console.log(e.message);
             delete rs;
