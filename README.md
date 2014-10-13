@@ -1,6 +1,13 @@
 Malache
 =======
 
+
+THIS REPO WILL NOT BE SUPPORTED ANY LONGER, PLEASE GO VISIT NEW VERSION OF MALACHE AT:
+https://github.com/malpower/Malache2/
+
+
+
+
 This is a web server based on nodeJS.
 http://malache.malpower.net/
 
